@@ -21,8 +21,12 @@
             <TextBlock x:Name="label" Text="Charge Cycle Count    :    " Visibility="Collapsed"></TextBlock><TextBlock x:Name="chargecycle" Visibility="Collapsed"/>
             <controls:DataGrid x:Name="myDataGrid" AutoGenerateColumns="False"  Margin="10, 20, 0, 0"   Visibility="Collapsed"            />
             <TextBlock x:Name="count1" Text="Badcount    :    " Visibility="Collapsed"/>
+            <TextBlock x:Name="count11"  Visibility="Collapsed"/>
+
             <TextBlock x:Name="count2" Text="Optimalcount    :    " Visibility="Collapsed"/>
-            <TextBlock x:Name="count3" Text="Optimalcount    :    " Visibility="Collapsed"/>
+            <TextBlock x:Name="count22"  Visibility="Collapsed"/>
+            <TextBlock x:Name="count3" Text="Spotcount    :    " Visibility="Collapsed"/>
+            <TextBlock x:Name="count33"  Visibility="Collapsed"/>
 
         </StackPanel>
     </ScrollViewer>
