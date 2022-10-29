@@ -2,6 +2,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.Linq;
@@ -27,12 +28,17 @@ namespace App1
             count1.Visibility = Visibility.Collapsed;
             count2.Visibility = Visibility.Collapsed;
             count3.Visibility = Visibility.Collapsed;
+            count11.Visibility = Visibility.Visible;
+            count22.Visibility = Visibility.Visible;
+            count33.Visibility = Visibility.Visible;
             con.Open();
 
             int discharge,timeframe;
             int temp, temp1;
             int min, min1;
+            int cycle = 0;
             string[] datehour=new string[] { };
+            //List<string> hours=new List<string>();
             DataTable dt;
             dt = new DataTable();
             dt.Columns.Add("Day");
@@ -42,67 +48,82 @@ namespace App1
 
             var time = DateTime.Now;
             DateTime dt2 = time.AddDays(-6);
-            for (int i = 0; i < 5; i++)
+            for (int i = 1; i <= 5; i++)
             {
                 dt2 = dt2.AddDays(1);
                 string formatted = dt2.ToString("dd-MM-yyyy");
 
                 discharge = 0;
                 timeframe = 0;
-                SQLiteCommand cmd = new SQLiteCommand("select distinct strftime('%H',timenow) from Batteryinfo where  strftime('%d-%m-%Y',timenow)='" + formatted +  "' and batterystatus=1;", con);
+                SQLiteCommand cmd = new SQLiteCommand("select distinct strftime('%H',timenow) from Batteryinfo where  strftime('%d-%m-%Y',timenow)='" + formatted + "' and batterystatus=1;", con);
                 SQLiteDataReader rd = cmd.ExecuteReader();
                 if (rd.HasRows)
                 {
-                    rd.Read();
-                    datehour = datehour.Append(rd[0].ToString()).ToArray();
-                    rd.Close();
-                }
-                foreach(string hour in datehour){
-                    SQLiteCommand cmd1 = new SQLiteCommand("select batterylevel,strftime('%M',timenow) from Batteryinfo where  strftime('%d-%m-%Y &H',timenow)='" + formatted + " "+hour+"' and batterystatus=1;", con);
-                    SQLiteDataReader reader = cmd.ExecuteReader();
-                    reader.Read();
-                    temp = int.Parse(reader[0].ToString());
-                    min= int.Parse(reader[1].ToString());
-                    while (reader.Read())
+                    while (rd.Read())
                     {
-
-                        temp1 = int.Parse(reader[0].ToString());
-                        min1= int.Parse(reader[1].ToString());
-                        if (temp1 > temp)
-                        {
-                            temp = temp1;
-                            min = min1;
-
-                        }
-                        else
-                        {
-                            discharge += (temp - temp1);
-                            timeframe+=(min1-min);
-                            temp = temp1;
-                            min = min1;
-                        }
+                        datehour =datehour.Append(rd[0].ToString()).ToArray();
 
                     }
-                    dt.Rows.Add(formatted, hour + ":00:00", timeframe, discharge);
-                }
 
+                    foreach (string hour in datehour)
+                    {
+
+                        discharge = 0;
+                        timeframe = 0;
+                        SQLiteCommand cmd1 = new SQLiteCommand("select batterylevel,strftime('%M',timenow) from Batteryinfo where  strftime('%d-%m-%Y %H',timenow)='" + formatted + " " + hour + "' and batterystatus=1;", con);
+                        SQLiteDataReader reader = cmd1.ExecuteReader();
+                        if (reader.HasRows)
+                        {
+                            reader.Read();
+                            temp = int.Parse(reader[0].ToString());
+                            min = int.Parse(reader[1].ToString());
+                            while (reader.Read())
+                            {
+
+                                temp1 = int.Parse(reader[0].ToString());
+                                min1 = int.Parse(reader[1].ToString());
+                                if (temp1 > temp)
+                                {
+                                    temp = temp1;
+                                    min = min1;
+
+                                }
+                                else
+                                {
+                                    discharge += (temp - temp1);
+                                    timeframe += (min1 - min);
+                                    temp = temp1;
+                                    min = min1;
+                                }
+
+                            }
+
+                            dt.Rows.Add(formatted, hour + ":00:00", timeframe, discharge);
+                            cycle += discharge;
+
+                        }
+                        reader.Close();
+
+                    }
+
+                }
             }
             for (int i = 0; i < dt.Columns.Count; i++)
             {
-                myDataGrid.Columns.Add(new CommunityToolkit.WinUI.UI.Controls.DataGridTextColumn()
+                myDataGrid.Columns.Add(new DataGridTextColumn()
                 {
                     Header = dt.Columns[i].ColumnName,
                     Binding = new Binding { Path = new PropertyPath("[" + i.ToString() + "]") }
                 });
             }
             var collectionObjects = new System.Collections.ObjectModel.ObservableCollection<object>();
-            int cycle = 0;
+            
             foreach (DataRow row in dt.Rows)
             {
-                cycle += int.Parse(row["Discharge"].ToString());
                 collectionObjects.Add(row.ItemArray);
             }
-            chargecycle.Text = (cycle / 100).ToString();
+            int c = cycle / 100;
+            chargecycle.Text = c.ToString();
             label.Visibility = Visibility.Visible;
             chargecycle.Visibility = Visibility.Visible;
             myDataGrid.ItemsSource = collectionObjects;
